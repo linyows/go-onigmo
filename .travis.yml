@@ -1,0 +1,13 @@
+language: go
+go:
+  - 1.9.x
+  - 1.8.x
+  - 1.7.x
+env:
+  matrix:
+    - ONIG_VERSION=6.1.3
+script:
+  - make ci
+notifications:
+  slack: linyows:2oeZ2qcLnaMjbnEYodwEXKTr
+  email: false
