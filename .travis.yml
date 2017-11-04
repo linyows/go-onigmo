@@ -6,6 +6,10 @@ go:
 env:
   matrix:
     - ONIG_VERSION=6.1.3
+addons:
+  apt:
+    packages:
+    - build-essential
 script:
   - make ci
 notifications:
