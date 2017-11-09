@@ -5,8 +5,8 @@ import (
 )
 
 func TestRgexp(t *testing.T) {
-	v := Version()
+	v := OnigVersion()
 	if v != "6.1.3" {
-		t.Errorf("Version wrong: %s", v)
+		t.Errorf("OnigVersion wrong: %s", v)
 	}
 }
