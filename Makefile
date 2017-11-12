@@ -23,7 +23,6 @@ test:
 	go test -race $(TEST) $(TESTARGS)
 
 ci:
-	$(MAKE) onigmo
 	$(MAKE) test
 	go install .
 
