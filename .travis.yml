@@ -9,7 +9,13 @@ env:
 addons:
   apt:
     packages:
-    - build-essential
+      - make
+      - build-essential
+      - gcc-4.8
+      - g++-4.8
+      - libtool
+install:
+  - make onigmo
 script:
   - make ci
 notifications:
