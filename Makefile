@@ -9,7 +9,7 @@ default: test
 onigmo:
 	curl -sLO https://github.com/k-takata/Onigmo/releases/download/Onigmo-${ONIG_VERSION}/onigmo-${ONIG_VERSION}.tar.gz
 	tar xfz onigmo-${ONIG_VERSION}.tar.gz
-	pushd onigmo-${ONIG_VERSION} && ./configure && make && sudo make install && popd
+	cd onigmo-${ONIG_VERSION} && ./configure && make && sudo make install
 
 deps:
 	go get -d -t ./...
