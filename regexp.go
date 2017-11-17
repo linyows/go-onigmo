@@ -2,7 +2,7 @@ package onigmo
 
 /*
 #cgo CFLAGS: -I/usr/local/include
-#cgo LDFLAGS: -L/usr/local/lib -lonig
+#cgo LDFLAGS: -L/usr/local/lib -lonigmo
 #include <stdlib.h>
 #include <string.h>
 #include <onigmo.h>
