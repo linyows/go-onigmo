@@ -37,7 +37,7 @@ type MatchResult struct {
 	input  string
 }
 
-func OnigVersion() string {
+func OnigmoVersion() string {
 	return C.GoString(C.onig_version())
 }
 

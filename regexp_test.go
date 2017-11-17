@@ -4,9 +4,9 @@ import (
 	"testing"
 )
 
-func TestRgexp(t *testing.T) {
-	v := OnigVersion()
+func TestOnigmoVersion(t *testing.T) {
+	v := OnigmoVersion()
 	if v != "6.1.3" {
-		t.Errorf("OnigVersion wrong: %s", v)
+		t.Errorf("OnigmoVersion wrong: %s", v)
 	}
 }
