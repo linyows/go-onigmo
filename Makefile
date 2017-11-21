@@ -23,8 +23,8 @@ test:
 	go test -race $(TEST) $(TESTARGS)
 
 ci:
-	$(MAKE) test
-	go install .
+	CGO_LDFLAGS=/usr/local/lib/libonigmo.a go test -v
+	CGO_LDFLAGS=/usr/local/lib/libonigmo.a go install .
 
 dist:
 	ghr v$(VERSION) pkg
