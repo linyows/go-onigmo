@@ -8,12 +8,12 @@ package onigmo
 #include <onigmo.h>
 
 // cgo does not support vargs
-extern int onig_helper_error_code_with_info_to_str(UChar* err_buf, int err_code, OnigErrorInfo *errInfo);
-extern int onig_helper_error_code_to_str(UChar* err_buf, OnigPosition err_code);
-int onig_helper_error_code_with_info_to_str(UChar* err_buf, int err_code, OnigErrorInfo *errInfo) {
+extern int onigmo_helper_error_code_with_info_to_str(UChar* err_buf, int err_code, OnigErrorInfo *errInfo);
+extern int onigmo_helper_error_code_to_str(UChar* err_buf, OnigPosition err_code);
+int onigmo_helper_error_code_with_info_to_str(UChar* err_buf, int err_code, OnigErrorInfo *errInfo) {
     return onig_error_code_to_str(err_buf, err_code, errInfo);
 }
-int onig_helper_error_code_to_str(UChar* err_buf, OnigPosition err_code) {
+int onigmo_helper_error_code_to_str(UChar* err_buf, OnigPosition err_code) {
     return onig_error_code_to_str(err_buf, err_code);
 }
 */
@@ -164,7 +164,7 @@ func free(start *C.OnigUChar, end *C.OnigUChar) {
 
 func errMsgWithInfo(returnCode C.int, errorInfo *C.OnigErrorInfo) string {
 	msg := make([]byte, C.ONIG_MAX_ERROR_MESSAGE_LEN)
-	l := C.onig_helper_error_code_with_info_to_str((*C.UChar)(&msg[0]), returnCode, errorInfo)
+	l := C.onigmo_helper_error_code_with_info_to_str((*C.UChar)(&msg[0]), returnCode, errorInfo)
 	if l <= 0 {
 		return "unknown error"
 	} else {
@@ -174,7 +174,7 @@ func errMsgWithInfo(returnCode C.int, errorInfo *C.OnigErrorInfo) string {
 
 func errMsg(returnCode C.OnigPosition) string {
 	msg := make([]byte, C.ONIG_MAX_ERROR_MESSAGE_LEN)
-	l := C.onig_helper_error_code_to_str((*C.UChar)(&msg[0]), returnCode)
+	l := C.onigmo_helper_error_code_to_str((*C.UChar)(&msg[0]), returnCode)
 	if l <= 0 {
 		return "unknown error"
 	} else {
