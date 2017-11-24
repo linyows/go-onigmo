@@ -44,7 +44,7 @@ func OnigmoVersion() string {
 func Compile(pattern string) (*Regexp, error) {
 	ret := C.onig_init()
 	if ret != 0 {
-		return nil, errors.New("failed to initialize encoding for the Oniguruma regular expression library.")
+		return nil, errors.New("failed to initialize encoding for the Onigumo regular expression library.")
 	}
 	result := &Regexp{
 		cachedCaptureGroupNums: make(map[string][]C.int),
