@@ -41,7 +41,7 @@ func OnigmoVersion() string {
 	return C.GoString(C.onig_version())
 }
 
-func Compile(pattern string) (*Regexp, error) {
+func NewRegexp(pattern string) (*Regexp, error) {
 	ret := C.onig_init()
 	if ret != 0 {
 		return nil, errors.New("failed to initialize encoding for the Onigumo regular expression library.")
@@ -57,6 +57,10 @@ func Compile(pattern string) (*Regexp, error) {
 		return nil, errors.New(errMsgWithInfo(r, &errorInfo))
 	}
 	return result, nil
+}
+
+func Compile(str string) (*Regexp, error) {
+	return NewRegexp(str)
 }
 
 func (regex *Regexp) Free() {
