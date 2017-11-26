@@ -41,7 +41,7 @@ func OnigmoVersion() string {
 	return C.GoString(C.onig_version())
 }
 
-func NewRegexp(pattern string) (*Regexp, error) {
+func NewRegexp(str string) (*Regexp, error) {
 	ret := C.onig_init()
 	if ret != 0 {
 		return nil, errors.New("failed to initialize encoding for the Onigumo regular expression library.")
@@ -49,7 +49,7 @@ func NewRegexp(pattern string) (*Regexp, error) {
 	result := &Regexp{
 		cachedCaptureGroupNums: make(map[string][]C.int),
 	}
-	patternStart, patternEnd := pointers(pattern)
+	patternStart, patternEnd := pointers(str)
 	defer free(patternStart, patternEnd)
 	var errorInfo C.OnigErrorInfo
 	r := C.onig_new(&result.regex, patternStart, patternEnd, C.ONIG_OPTION_DEFAULT, &C.OnigEncodingASCII, C.ONIG_SYNTAX_DEFAULT, &errorInfo)
