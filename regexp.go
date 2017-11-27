@@ -22,6 +22,7 @@ import "C"
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"unsafe"
 )
 
@@ -145,6 +146,13 @@ func (m *MatchResult) Free() {
 	if m.match {
 		C.onig_region_free(m.region, 1)
 	}
+}
+
+func quote(s string) string {
+	if strconv.CanBackquote(s) {
+		return "`" + s + "`"
+	}
+	return strconv.Quote(s)
 }
 
 func pointers(s string) (start, end *C.OnigUChar) {
