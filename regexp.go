@@ -64,6 +64,14 @@ func Compile(str string) (*Regexp, error) {
 	return NewRegexp(str)
 }
 
+func MustCompile(str string) *Regexp {
+	regexp, error := Compile(str)
+	if error != nil {
+		panic(`regexp: Compile(` + quote(str) + `): ` + error.Error())
+	}
+	return regexp
+}
+
 func (regex *Regexp) Free() {
 	C.onig_free(regex.regex)
 }
