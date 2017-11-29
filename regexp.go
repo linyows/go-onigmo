@@ -72,6 +72,14 @@ func MustCompile(str string) *Regexp {
 	return regexp
 }
 
+func Match(pattern string, s string) (*MatchResult, error) {
+	re, err := Compile(pattern)
+	if err != nil {
+		return nil, err
+	}
+	return re.Match(s)
+}
+
 func (regex *Regexp) Free() {
 	C.onig_free(regex.regex)
 }
