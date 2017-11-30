@@ -31,16 +31,14 @@ func TestRegex(t *testing.T) {
 		t.Errorf("User wrong: %s", user)
 	}
 
-	/*
-		value, err := result.Get("value")
-		if err != nil {
-			t.Errorf("Get error: %#v", err)
-		}
+	value, err := result.Get("value")
+	if err != nil {
+		t.Errorf("Get error: %#v", err)
+	}
 
-		if value != "5" {
-			t.Errorf("Val wrong: %s", value)
-		}
-	*/
+	if value != "5" {
+		t.Errorf("Val wrong: %s", value)
+	}
 
 	defer regex.Free()
 	defer result.Free()
