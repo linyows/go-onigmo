@@ -142,21 +142,17 @@ func (m *MatchResult) Get(name string) (string, error) {
 	if !m.match {
 		return "", nil
 	}
+
 	groupNums, err := m.regex.getCaptureGroupNums(name)
 	if err != nil {
 		return "", err
 	}
+
 	for _, groupNum := range groupNums {
-		beg := getPos(m.region.beg, groupNum)
-		end := getPos(m.region.end, groupNum)
-		if beg > end || beg < 0 || int(end) > len(m.input) {
-			return "", fmt.Errorf("%v: unexpected result when calling onig_name_to_group_numbers()", name)
-		} else if beg == end {
-			continue
-		} else {
-			return m.input[beg:end], nil
-		}
+		w := C.onigmo_helper_get(C.CString(m.input), m.region.beg, m.region.end, groupNum)
+		return C.GoString(w), nil
 	}
+
 	return "", nil
 }
 
