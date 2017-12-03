@@ -179,10 +179,6 @@ func pointers(s string) (start, end *C.OnigUChar) {
 	return
 }
 
-func getPos(p *C.OnigPosition, i C.int) C.int {
-	return *(*C.int)(unsafe.Pointer(uintptr(unsafe.Pointer(p)) + uintptr(i)*unsafe.Sizeof(C.int(0))))
-}
-
 func getPosI(p *C.int, i C.int) C.int {
 	return *(*C.int)(unsafe.Pointer(uintptr(unsafe.Pointer(p)) + uintptr(i)*unsafe.Sizeof(C.int(0))))
 }
