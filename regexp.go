@@ -100,18 +100,23 @@ func (r *Regexp) getCaptureGroupNums(name string) ([]C.int, error) {
 	if ok {
 		return cached, nil
 	}
+
 	nameStart, nameEnd := pointers(name)
 	defer free(nameStart, nameEnd)
+
 	var groupNums *C.int
 	n := C.onig_name_to_group_numbers(r.regex, nameStart, nameEnd, &groupNums)
 	if n <= 0 {
 		return nil, fmt.Errorf("%v: no such capture group in pattern", name)
 	}
+
 	result := make([]C.int, 0, int(n))
 	for i := 0; i < int(n); i++ {
-		result = append(result, getPosI(groupNums, C.int(i)))
+		result = append(result, getPos(groupNums, C.int(i)))
 	}
+
 	r.cachedCaptureGroupNums[name] = result
+
 	return result, nil
 }
 
@@ -179,7 +184,7 @@ func pointers(s string) (start, end *C.OnigUChar) {
 	return
 }
 
-func getPosI(p *C.int, i C.int) C.int {
+func getPos(p *C.int, i C.int) C.int {
 	return *(*C.int)(unsafe.Pointer(uintptr(unsafe.Pointer(p)) + uintptr(i)*unsafe.Sizeof(C.int(0))))
 }
 
