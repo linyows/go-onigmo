@@ -32,7 +32,12 @@ import (
 	"unsafe"
 )
 
+var (
+	ONIG_ENCODING_UTF8 = &C.OnigEncodingUTF_8
+)
+
 type Regexp struct {
+	encoding               C.OnigEncoding
 	regex                  C.OnigRegex
 	cachedCaptureGroupNums map[string][]C.int
 }
@@ -54,12 +59,16 @@ func NewRegexp(str string) (*Regexp, error) {
 		return nil, errors.New("failed to initialize encoding for the Onigumo regular expression library.")
 	}
 	result := &Regexp{
+		encoding:               ONIG_ENCODING_UTF8,
 		cachedCaptureGroupNums: make(map[string][]C.int),
 	}
+	result.mu.Lock()
+	defer result.mu.Unlock()
+
 	patternStart, patternEnd := pointers(str)
 	defer free(patternStart, patternEnd)
 	var errorInfo C.OnigErrorInfo
-	r := C.onig_new(&result.regex, patternStart, patternEnd, C.ONIG_OPTION_DEFAULT, &C.OnigEncodingASCII, C.ONIG_SYNTAX_DEFAULT, &errorInfo)
+	r := C.onig_new(&result.regex, patternStart, patternEnd, C.ONIG_OPTION_DEFAULT, result.encoding, C.ONIG_SYNTAX_DEFAULT, &errorInfo)
 	if r != C.ONIG_NORMAL {
 		return nil, errors.New(errMsgWithInfo(r, &errorInfo))
 	}
