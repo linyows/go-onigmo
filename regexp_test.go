@@ -17,12 +17,12 @@ func TestRegex(t *testing.T) {
 		t.Errorf("Compile error: %#v", err)
 	}
 
-	result, err := regex.Match("1st user foo 2nd user bar value 5")
+	match, err := regex.Match("1st user foo 2nd user bar value 5")
 	if err != nil {
 		t.Errorf("Match error: %#v", err)
 	}
 
-	user, err := result.Get("user")
+	user, err := match.Get("user")
 	if err != nil {
 		t.Errorf("Get error: %#v", err)
 	}
@@ -31,7 +31,7 @@ func TestRegex(t *testing.T) {
 		t.Errorf("User wrong: %s", user)
 	}
 
-	value, err := result.Get("value")
+	value, err := match.Get("value")
 	if err != nil {
 		t.Errorf("Get error: %#v", err)
 	}
@@ -41,7 +41,7 @@ func TestRegex(t *testing.T) {
 	}
 
 	defer regex.Free()
-	defer result.Free()
+	defer match.Free()
 }
 
 func TestInvalidCaptureGroups(t *testing.T) {
