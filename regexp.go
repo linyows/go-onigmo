@@ -29,6 +29,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"sync"
 	"unsafe"
 )
 
@@ -40,6 +41,7 @@ type Regexp struct {
 	encoding               C.OnigEncoding
 	regex                  C.OnigRegex
 	cachedCaptureGroupNums map[string][]C.int
+	mu                     sync.Mutex
 }
 
 type MatchResult struct {
