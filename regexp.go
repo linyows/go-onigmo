@@ -69,11 +69,13 @@ func NewRegexp(str string) (*Regexp, error) {
 
 	patternStart, patternEnd := pointers(str)
 	defer free(patternStart, patternEnd)
+
 	var errorInfo C.OnigErrorInfo
 	r := C.onig_new(&result.regex, patternStart, patternEnd, C.ONIG_OPTION_DEFAULT, result.encoding, C.ONIG_SYNTAX_DEFAULT, &errorInfo)
 	if r != C.ONIG_NORMAL {
 		return nil, errors.New(errMsgWithInfo(r, &errorInfo))
 	}
+
 	return result, nil
 }
 
@@ -86,6 +88,7 @@ func MustCompile(str string) *Regexp {
 	if error != nil {
 		panic(`regexp: Compile(` + quote(str) + `): ` + error.Error())
 	}
+
 	return regexp
 }
 
@@ -94,6 +97,7 @@ func Match(pattern string, s string) (*MatchResult, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return re.Match(s)
 }
 
@@ -103,6 +107,7 @@ func (regex *Regexp) Free() {
 
 func (regex *Regexp) HasCaptureGroup(name string) bool {
 	_, err := regex.getCaptureGroupNums(name)
+
 	return err == nil
 }
 
@@ -135,15 +140,18 @@ func (regex *Regexp) Match(input string) (*MatchResult, error) {
 	region := C.onig_region_new()
 	inputStart, inputEnd := pointers(input)
 	defer free(inputStart, inputEnd)
+
 	r := C.onig_match(regex.regex, inputStart, inputEnd, inputStart, region, C.ONIG_OPTION_NONE)
 	if r == C.ONIG_MISMATCH {
 		C.onig_region_free(region, 1)
 		return &MatchResult{
 			match: false,
 		}, nil
+
 	} else if r < 0 {
 		C.onig_region_free(region, 1)
 		return nil, errors.New(errMsg(r))
+
 	} else {
 		return &MatchResult{
 			match:  true,
