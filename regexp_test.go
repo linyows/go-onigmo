@@ -11,37 +11,39 @@ func TestOnigmoVersion(t *testing.T) {
 	}
 }
 
-func TestRegex(t *testing.T) {
-	regex, err := Compile("^1st user (?<user>[a-z]*) ?2nd user (?<user>[a-z]+) value (?<value>[0-9]+)$")
+func TestValidCaptureGroups(t *testing.T) {
+	regex, err := Compile("^1st user (?<user>[a-z]*) ?2nd user (?<user>[a-z]+) value (?<val>[0-9]+)$")
 	if err != nil {
-		t.Errorf("Compile error: %#v", err)
+		t.Error(err)
 	}
 
-	match, err := regex.Match("1st user foo 2nd user bar value 5")
-	if err != nil {
-		t.Errorf("Match error: %#v", err)
-	}
-
-	user, err := match.Get("user")
-	if err != nil {
-		t.Errorf("Get error: %#v", err)
-	}
-
-	if user != "foo" {
-		t.Errorf("User wrong: %s", user)
-	}
-
-	value, err := match.Get("value")
-	if err != nil {
-		t.Errorf("Get error: %#v", err)
-	}
-
-	if value != "5" {
-		t.Errorf("Val wrong: %s", value)
+	for _, data := range [][]string{
+		[]string{"1st user foo 2nd user bar value 7", "foo", "7"},
+		// []string{"1st user 2nd user bar value 789", "bar", "789"},
+		[]string{"1st user somebody 2nd user else value 123", "somebody", "123"},
+	} {
+		match, err := regex.Match(data[0])
+		if err != nil {
+			t.Error(err)
+		}
+		user, err := match.Get("user")
+		if err != nil {
+			t.Error(err)
+		}
+		if user != data[1] {
+			t.Errorf("Expected user %v, but got %v", data[1], user)
+		}
+		val, err := match.Get("val")
+		if err != nil {
+			t.Error(err)
+		}
+		if val != data[2] {
+			t.Errorf("Expected val %v, but got %v", data[2], val)
+		}
+		match.Free()
 	}
 
 	defer regex.Free()
-	defer match.Free()
 }
 
 func TestInvalidCaptureGroups(t *testing.T) {
