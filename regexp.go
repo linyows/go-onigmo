@@ -34,7 +34,11 @@ import (
 )
 
 var (
-	ONIG_ENCODING_UTF8 = &C.OnigEncodingUTF_8
+	ONIG_ENCODING_UTF8         = &C.OnigEncodingUTF_8
+	ONIG_ENCODING_ASCII        = &C.OnigEncodingASCII
+	ONIG_SYNTAX_PERL           = &C.OnigSyntaxPerl
+	ONIG_SYNTAX_POSIX_BASIC    = &C.OnigSyntaxPosixBasic
+	ONIG_SYNTAX_POSIX_EXTENDED = &C.OnigSyntaxPosixExtended
 )
 
 type Regexp struct {
