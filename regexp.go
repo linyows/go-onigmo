@@ -71,7 +71,7 @@ func NewRegexp(str string) (*Regexp, error) {
 	result.mu.Lock()
 	defer result.mu.Unlock()
 
-	patternStart, patternEnd := pointers(str)
+	patternStart, patternEnd := stringPointers(str)
 	defer free(patternStart, patternEnd)
 
 	var errorInfo C.OnigErrorInfo
@@ -121,7 +121,7 @@ func (r *Regexp) getCaptureGroupNums(name string) ([]C.int, error) {
 		return cached, nil
 	}
 
-	nameStart, nameEnd := pointers(name)
+	nameStart, nameEnd := stringPointers(name)
 	defer free(nameStart, nameEnd)
 
 	var groupNums *C.int
@@ -201,7 +201,7 @@ func quote(s string) string {
 	return strconv.Quote(s)
 }
 
-func pointers(s string) (start, end *C.OnigUChar) {
+func stringPointers(s string) (start, end *C.OnigUChar) {
 	start = (*C.OnigUChar)(unsafe.Pointer(C.CString(s)))
 	end = (*C.OnigUChar)(unsafe.Pointer(uintptr(unsafe.Pointer(start)) + uintptr(len(s))))
 	return
