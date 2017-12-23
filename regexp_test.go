@@ -30,20 +30,21 @@ func TestValidCaptureGroups(t *testing.T) {
 			t.Error("expected a match")
 		}
 
-		user, err := regex.Get("user")
+		user, err := regex.matchResult.Get("user")
 		if err != nil {
 			t.Error(err)
 		}
 		if user != data[1] {
 			t.Errorf("Expected user %v, but got %v", data[1], user)
 		}
-		val, err := regex.Get("val")
+		val, err := regex.matchResult.Get("val")
 		if err != nil {
 			t.Error(err)
 		}
 		if val != data[2] {
 			t.Errorf("Expected val %v, but got %v", data[2], val)
 		}
+		defer regex.matchResult.Free()
 	}
 
 	defer regex.Free()
@@ -67,12 +68,13 @@ func TestInvalidCaptureGroups(t *testing.T) {
 		[]string{"void", ""},
 		[]string{"", ""},
 	} {
-		_, err := regex.Get(data[0])
+		_, err := regex.matchResult.Get(data[0])
 		if err == nil {
 			t.Error("Expected error, because used non-existing capture group name.")
 		}
 	}
-	val, err := regex.Get("x")
+
+	val, err := regex.matchResult.Get("x")
 	if err != nil {
 		t.Error(err)
 	}
@@ -80,5 +82,6 @@ func TestInvalidCaptureGroups(t *testing.T) {
 		t.Errorf("Expected empty string, but got %v", val)
 	}
 
+	defer regex.matchResult.Free()
 	defer regex.Free()
 }
