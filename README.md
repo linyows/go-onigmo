@@ -13,8 +13,13 @@ It binds the regular expression library Onigmo to Go.
 [license]: https://github.com/linyows/go-onigmo/blob/master/LICENSE
 [godocs]: http://godoc.org/github.com/linyows/go-onigmo
 
-Install
--------
+Installation
+------------
+
+```sh
+$ git clone git@github.com:linyows/go-onigmo.git && cd go-onigmo
+$ make onigmo
+```
 
 To install, use `go get`:
 
