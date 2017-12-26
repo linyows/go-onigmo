@@ -48,12 +48,14 @@ type Regexp struct {
 	matchResult *MatchResult
 }
 
+type NamedGroupNums map[string][]C.int
+
 type MatchResult struct {
-	regex                  C.OnigRegex
-	matched                bool
-	input                  string
-	region                 *C.OnigRegion
-	cachedCaptureGroupNums map[string][]C.int
+	regex          C.OnigRegex
+	matched        bool
+	input          string
+	region         *C.OnigRegion
+	namedGroupNums NamedGroupNums
 }
 
 func OnigmoVersion() string {
@@ -106,7 +108,7 @@ func Match(pattern string, s string) (bool, error) {
 }
 
 func (m *MatchResult) HasCaptureGroup(name string) bool {
-	_, err := m.getCaptureGroupNums(name)
+	_, err := m.getNamedGroupNums(name)
 
 	return err == nil
 }
@@ -120,8 +122,8 @@ func (re *Regexp) Match(input string) (bool, error) {
 	if r == C.ONIG_MISMATCH {
 		C.onig_region_free(region, 1)
 		re.matchResult = &MatchResult{
-			matched:                false,
-			cachedCaptureGroupNums: make(map[string][]C.int),
+			matched:        false,
+			namedGroupNums: make(map[string][]C.int),
 		}
 		return false, nil
 
@@ -131,11 +133,11 @@ func (re *Regexp) Match(input string) (bool, error) {
 
 	} else {
 		re.matchResult = &MatchResult{
-			matched: true,
-			region:  region,
-			input:   input,
-			regex:   re.regex,
-			cachedCaptureGroupNums: make(map[string][]C.int),
+			matched:        true,
+			region:         region,
+			input:          input,
+			regex:          re.regex,
+			namedGroupNums: make(map[string][]C.int),
 		}
 		return true, nil
 	}
@@ -153,8 +155,8 @@ func (re *Regexp) Search(s string) string {
 	if r == C.ONIG_MISMATCH {
 		C.onig_region_free(region, 1)
 		re.matchResult = &MatchResult{
-			matched:                false,
-			cachedCaptureGroupNums: make(map[string][]C.int),
+			matched:        false,
+			namedGroupNums: make(map[string][]C.int),
 		}
 		return ""
 
@@ -164,18 +166,18 @@ func (re *Regexp) Search(s string) string {
 
 	} else {
 		re.matchResult = &MatchResult{
-			matched: true,
-			region:  region,
-			input:   s,
-			regex:   re.regex,
-			cachedCaptureGroupNums: make(map[string][]C.int),
+			matched:        true,
+			region:         region,
+			input:          s,
+			regex:          re.regex,
+			namedGroupNums: make(map[string][]C.int),
 		}
 		return ""
 	}
 }
 
-func (m *MatchResult) getCaptureGroupNums(name string) ([]C.int, error) {
-	cached, ok := m.cachedCaptureGroupNums[name]
+func (m *MatchResult) getNamedGroupNums(name string) ([]C.int, error) {
+	cached, ok := m.namedGroupNums[name]
 	if ok {
 		return cached, nil
 	}
@@ -194,7 +196,7 @@ func (m *MatchResult) getCaptureGroupNums(name string) ([]C.int, error) {
 		result = append(result, getPos(groupNums, C.int(i)))
 	}
 
-	m.cachedCaptureGroupNums[name] = result
+	m.namedGroupNums[name] = result
 
 	return result, nil
 }
@@ -204,7 +206,7 @@ func (m *MatchResult) Get(name string) (string, error) {
 		return "", nil
 	}
 
-	groupNums, err := m.getCaptureGroupNums(name)
+	groupNums, err := m.getNamedGroupNums(name)
 	if err != nil {
 		return "", err
 	}
