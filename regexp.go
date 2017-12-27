@@ -62,7 +62,7 @@ func OnigmoVersion() string {
 	return C.GoString(C.onig_version())
 }
 
-func NewRegexp(str string) (*Regexp, error) {
+func NewRegexp(expr string) (*Regexp, error) {
 	ret := C.onig_init()
 	if ret != 0 {
 		return nil, errors.New("failed to initialize encoding for the Onigumo regular expression library.")
@@ -73,7 +73,7 @@ func NewRegexp(str string) (*Regexp, error) {
 	result.mu.Lock()
 	defer result.mu.Unlock()
 
-	patternStart, patternEnd := stringPointers(str)
+	patternStart, patternEnd := stringPointers(expr)
 	defer free(patternStart, patternEnd)
 
 	var errorInfo C.OnigErrorInfo
@@ -85,14 +85,14 @@ func NewRegexp(str string) (*Regexp, error) {
 	return result, nil
 }
 
-func Compile(str string) (*Regexp, error) {
-	return NewRegexp(str)
+func Compile(expr string) (*Regexp, error) {
+	return NewRegexp(expr)
 }
 
-func MustCompile(str string) *Regexp {
-	regexp, error := Compile(str)
+func MustCompile(expr string) *Regexp {
+	regexp, error := Compile(expr)
 	if error != nil {
-		panic(`regexp: Compile(` + quote(str) + `): ` + error.Error())
+		panic(`regexp: Compile(` + quote(expr) + `): ` + error.Error())
 	}
 
 	return regexp
@@ -113,9 +113,9 @@ func (m *MatchResult) HasCaptureGroup(name string) bool {
 	return err == nil
 }
 
-func (re *Regexp) Match(input string) (bool, error) {
+func (re *Regexp) Match(s string) (bool, error) {
 	region := C.onig_region_new()
-	inputStart, inputEnd := stringPointers(input)
+	inputStart, inputEnd := stringPointers(s)
 	defer free(inputStart, inputEnd)
 
 	r := C.onig_match(re.regex, inputStart, inputEnd, inputStart, region, C.ONIG_OPTION_NONE)
@@ -123,6 +123,7 @@ func (re *Regexp) Match(input string) (bool, error) {
 		C.onig_region_free(region, 1)
 		re.matchResult = &MatchResult{
 			matched:        false,
+			input:          s,
 			namedGroupNums: make(map[string][]C.int),
 		}
 		return false, nil
@@ -135,7 +136,7 @@ func (re *Regexp) Match(input string) (bool, error) {
 		re.matchResult = &MatchResult{
 			matched:        true,
 			region:         region,
-			input:          input,
+			input:          s,
 			regex:          re.regex,
 			namedGroupNums: make(map[string][]C.int),
 		}
@@ -176,19 +177,19 @@ func (re *Regexp) Search(s string) string {
 	}
 }
 
-func (m *MatchResult) getNamedGroupNums(name string) ([]C.int, error) {
-	cached, ok := m.namedGroupNums[name]
+func (m *MatchResult) getNamedGroupNums(s string) ([]C.int, error) {
+	cached, ok := m.namedGroupNums[s]
 	if ok {
 		return cached, nil
 	}
 
-	nameStart, nameEnd := stringPointers(name)
+	nameStart, nameEnd := stringPointers(s)
 	defer free(nameStart, nameEnd)
 
 	var groupNums *C.int
 	n := C.onig_name_to_group_numbers(m.regex, nameStart, nameEnd, &groupNums)
 	if n <= 0 {
-		return nil, fmt.Errorf("%v: no such capture group in pattern", name)
+		return nil, fmt.Errorf("%v: no such capture group in pattern", s)
 	}
 
 	result := make([]C.int, 0, int(n))
@@ -196,17 +197,17 @@ func (m *MatchResult) getNamedGroupNums(name string) ([]C.int, error) {
 		result = append(result, getPos(groupNums, C.int(i)))
 	}
 
-	m.namedGroupNums[name] = result
+	m.namedGroupNums[s] = result
 
 	return result, nil
 }
 
-func (m *MatchResult) Get(name string) (string, error) {
+func (m *MatchResult) Get(s string) (string, error) {
 	if !m.matched {
 		return "", nil
 	}
 
-	groupNums, err := m.getNamedGroupNums(name)
+	groupNums, err := m.getNamedGroupNums(s)
 	if err != nil {
 		return "", err
 	}
