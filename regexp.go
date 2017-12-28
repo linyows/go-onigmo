@@ -73,11 +73,11 @@ func NewRegexp(expr string) (*Regexp, error) {
 	result.mu.Lock()
 	defer result.mu.Unlock()
 
-	patternStart, patternEnd := stringPointers(expr)
-	defer free(patternStart, patternEnd)
+	beginning, end := getPointers(expr)
+	defer free(beginning, end)
 
 	var errorInfo C.OnigErrorInfo
-	r := C.onig_new(&result.regex, patternStart, patternEnd, C.ONIG_OPTION_DEFAULT, result.encoding, C.ONIG_SYNTAX_DEFAULT, &errorInfo)
+	r := C.onig_new(&re.regex, beginning, end, C.ONIG_OPTION_DEFAULT, re.encoding, C.ONIG_SYNTAX_DEFAULT, &errorInfo)
 	if r != C.ONIG_NORMAL {
 		return nil, errors.New(errMsgWithInfo(r, &errorInfo))
 	}
@@ -115,10 +115,10 @@ func (m *MatchResult) HasCaptureGroup(name string) bool {
 
 func (re *Regexp) Match(s string) (bool, error) {
 	region := C.onig_region_new()
-	inputStart, inputEnd := stringPointers(s)
-	defer free(inputStart, inputEnd)
+	beginning, end := getPointers(s)
+	defer free(beginning, end)
 
-	r := C.onig_match(re.regex, inputStart, inputEnd, inputStart, region, C.ONIG_OPTION_NONE)
+	r := C.onig_match(re.regex, beginning, end, beginning, region, C.ONIG_OPTION_NONE)
 	if r == C.ONIG_MISMATCH {
 		C.onig_region_free(region, 1)
 		re.matchResult = &MatchResult{
@@ -146,13 +146,12 @@ func (re *Regexp) Match(s string) (bool, error) {
 
 func (re *Regexp) Search(s string) string {
 	region := C.onig_region_new()
-	start, end := stringPointers(s)
-	searchStart := start
+	beginning, end := getPointers(s)
+	searchBeginning := beginning
 	searchEnd := end
-	defer free(start, end)
-	defer free(searchStart, searchEnd)
+	defer free(beginning, end)
 
-	r := C.onig_search(re.regex, start, end, searchStart, searchEnd, region, C.ONIG_OPTION_NONE)
+	r := C.onig_search(re.regex, beginning, end, searchBeginning, searchEnd, region, C.ONIG_OPTION_NONE)
 	if r == C.ONIG_MISMATCH {
 		C.onig_region_free(region, 1)
 		re.matchResult = &MatchResult{
@@ -183,11 +182,11 @@ func (m *MatchResult) getNamedGroupNums(s string) ([]C.int, error) {
 		return cached, nil
 	}
 
-	nameStart, nameEnd := stringPointers(s)
-	defer free(nameStart, nameEnd)
+	beginning, end := getPointers(s)
+	defer free(beginning, end)
 
 	var groupNums *C.int
-	n := C.onig_name_to_group_numbers(m.regex, nameStart, nameEnd, &groupNums)
+	n := C.onig_name_to_group_numbers(m.regex, beginning, end, &groupNums)
 	if n <= 0 {
 		return nil, fmt.Errorf("%v: no such capture group in pattern", s)
 	}
@@ -237,9 +236,9 @@ func quote(s string) string {
 	return strconv.Quote(s)
 }
 
-func stringPointers(s string) (start, end *C.OnigUChar) {
-	start = (*C.OnigUChar)(unsafe.Pointer(C.CString(s)))
-	end = (*C.OnigUChar)(unsafe.Pointer(uintptr(unsafe.Pointer(start)) + uintptr(len(s))))
+func getPointers(s string) (beginning, end *C.OnigUChar) {
+	beginning = (*C.OnigUChar)(unsafe.Pointer(C.CString(s)))
+	end = (*C.OnigUChar)(unsafe.Pointer(uintptr(unsafe.Pointer(beginning)) + uintptr(len(s))))
 	return
 }
 
@@ -247,9 +246,9 @@ func getPos(p *C.int, i C.int) C.int {
 	return *(*C.int)(unsafe.Pointer(uintptr(unsafe.Pointer(p)) + uintptr(i)*unsafe.Sizeof(C.int(0))))
 }
 
-func free(start *C.OnigUChar, end *C.OnigUChar) {
-	C.memset(unsafe.Pointer(start), C.int(0), C.size_t(uintptr(unsafe.Pointer(end))-uintptr(unsafe.Pointer(start))))
-	C.free(unsafe.Pointer(start))
+func free(beginning *C.OnigUChar, end *C.OnigUChar) {
+	C.memset(unsafe.Pointer(beginning), C.int(0), C.size_t(uintptr(unsafe.Pointer(end))-uintptr(unsafe.Pointer(beginning))))
+	C.free(unsafe.Pointer(beginning))
 }
 
 func errMsgWithInfo(returnCode C.int, errorInfo *C.OnigErrorInfo) string {
