@@ -45,6 +45,7 @@ type Regexp struct {
 	encoding    C.OnigEncoding
 	regex       C.OnigRegex
 	mu          sync.Mutex
+	expr        string
 	matchResult *MatchResult
 }
 
@@ -69,6 +70,7 @@ func NewRegexp(expr string) (*Regexp, error) {
 	}
 	result := &Regexp{
 		encoding: ONIG_ENCODING_UTF8,
+		expr:     expr,
 	}
 	result.mu.Lock()
 	defer result.mu.Unlock()
