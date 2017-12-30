@@ -68,12 +68,14 @@ func NewRegexp(expr string) (*Regexp, error) {
 	if ret != 0 {
 		return nil, errors.New("failed to initialize encoding for the Onigumo regular expression library.")
 	}
-	result := &Regexp{
+
+	re := &Regexp{
 		encoding: ONIG_ENCODING_UTF8,
 		expr:     expr,
 	}
-	result.mu.Lock()
-	defer result.mu.Unlock()
+
+	re.mu.Lock()
+	defer re.mu.Unlock()
 
 	beginning, end := getPointers(expr)
 	defer free(beginning, end)
@@ -84,7 +86,7 @@ func NewRegexp(expr string) (*Regexp, error) {
 		return nil, errors.New(errMsgWithInfo(r, &errorInfo))
 	}
 
-	return result, nil
+	return re, nil
 }
 
 func Compile(expr string) (*Regexp, error) {
