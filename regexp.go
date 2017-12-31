@@ -148,7 +148,7 @@ func (re *Regexp) Match(s string) (bool, error) {
 	}
 }
 
-func (re *Regexp) Search(s string) string {
+func (re *Regexp) Search(s string) (bool, error) {
 	region := C.onig_region_new()
 	beginning, end := getPointers(s)
 	searchBeginning := beginning
@@ -160,13 +160,14 @@ func (re *Regexp) Search(s string) string {
 		C.onig_region_free(region, 1)
 		re.matchResult = &MatchResult{
 			matched:        false,
+			input:          s,
 			namedGroupNums: make(map[string][]C.int),
 		}
-		return ""
+		return false, nil
 
 	} else if r < 0 {
 		C.onig_region_free(region, 1)
-		return ""
+		return false, errors.New(errMsg(r))
 
 	} else {
 		re.matchResult = &MatchResult{
@@ -176,7 +177,7 @@ func (re *Regexp) Search(s string) string {
 			regex:          re.regex,
 			namedGroupNums: make(map[string][]C.int),
 		}
-		return ""
+		return true, nil
 	}
 }
 
