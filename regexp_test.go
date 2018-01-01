@@ -11,7 +11,42 @@ func TestOnigmoVersion(t *testing.T) {
 	}
 }
 
-func TestValidCaptureGroups(t *testing.T) {
+func TestSearchWithValidNamedGroup(t *testing.T) {
+	s := "aaabbbbcc"
+	regex, err := Compile("(?<foo>a*)(?<bar>b*)(?<foo>c*)")
+	if err != nil {
+		t.Error(err)
+	}
+
+	matched, err := regex.Search(s)
+	if err != nil {
+		t.Error(err)
+	}
+	if !matched {
+		t.Error("Expected a match, but not a match")
+	}
+
+	foo, err := regex.matchResult.Get("foo")
+	if err != nil {
+		t.Error(err)
+	}
+	if foo != "aaa" {
+		t.Errorf("Expected foo %v, but got %v", "aaa", foo)
+	}
+
+	bar, err := regex.matchResult.Get("bar")
+	if err != nil {
+		t.Error(err)
+	}
+	if bar != "bbbb" {
+		t.Errorf("Expected bar %v, but got %v", "bbbb", bar)
+	}
+
+	defer regex.matchResult.Free()
+	defer regex.Free()
+}
+
+func TestMatchWithValidNamedGroup(t *testing.T) {
 	regex, err := Compile("^1st user (?<user>[a-z]*) ?2nd user (?<user>[a-z]+) value (?<val>[0-9]+)$")
 	if err != nil {
 		t.Error(err)
@@ -19,7 +54,7 @@ func TestValidCaptureGroups(t *testing.T) {
 
 	for _, data := range [][]string{
 		[]string{"1st user foo 2nd user bar value 7", "foo", "7"},
-		// []string{"1st user 2nd user bar value 789", "bar", "789"},
+		[]string{"1st user 2nd user bar value 789", "", "789"},
 		[]string{"1st user somebody 2nd user else value 123", "somebody", "123"},
 	} {
 		matched, err := regex.Match(data[0])
@@ -50,7 +85,7 @@ func TestValidCaptureGroups(t *testing.T) {
 	defer regex.Free()
 }
 
-func TestInvalidCaptureGroups(t *testing.T) {
+func TestMatchWithInValidNamedGroup(t *testing.T) {
 	regex, err := Compile("^1st user (?<user>[a-z]*) ?2nd user (?<user>[a-z]+) (?<x>.*)(.*)value (?<val>[0-9]*)$")
 	if err != nil {
 		t.Error(err)
