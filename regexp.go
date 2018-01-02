@@ -57,6 +57,7 @@ type MatchResult struct {
 	input          string
 	region         *C.OnigRegion
 	namedGroupNums NamedGroupNums
+	errorMessage   string
 }
 
 func OnigmoVersion() string {
@@ -77,7 +78,7 @@ func NewRegexp(expr string) (*Regexp, error) {
 	re.mu.Lock()
 	defer re.mu.Unlock()
 
-	beginning, end := getPointers(expr)
+	beginning, end := stringPointers(expr)
 	defer free(beginning, end)
 
 	var errorInfo C.OnigErrorInfo
@@ -102,13 +103,22 @@ func MustCompile(expr string) *Regexp {
 	return regexp
 }
 
-func Match(pattern string, s string) (bool, error) {
+func Match(pattern string, b []byte) bool {
 	re, err := Compile(pattern)
 	if err != nil {
-		return false, err
+		return false
 	}
 
-	return re.Match(s)
+	return re.match(b)
+}
+
+func MatchString(pattern string, s string) bool {
+	re, err := Compile(pattern)
+	if err != nil {
+		return false
+	}
+
+	return re.MatchString(s)
 }
 
 func (m *MatchResult) HasCaptureGroup(name string) bool {
@@ -117,68 +127,92 @@ func (m *MatchResult) HasCaptureGroup(name string) bool {
 	return err == nil
 }
 
-func (re *Regexp) Match(s string) (bool, error) {
+func (re *Regexp) match(b []byte) bool {
 	region := C.onig_region_new()
-	beginning, end := getPointers(s)
+	beginning, end := bytePointers(b)
 	defer free(beginning, end)
+	input := string(b)
 
 	r := C.onig_match(re.regex, beginning, end, beginning, region, C.ONIG_OPTION_NONE)
 	if r == C.ONIG_MISMATCH {
 		C.onig_region_free(region, 1)
 		re.matchResult = &MatchResult{
 			matched:        false,
-			input:          s,
+			input:          input,
 			namedGroupNums: make(map[string][]C.int),
 		}
-		return false, nil
+		return false
 
 	} else if r < 0 {
 		C.onig_region_free(region, 1)
-		return false, errors.New(errMsg(r))
+		re.matchResult = &MatchResult{
+			matched:        false,
+			input:          input,
+			namedGroupNums: make(map[string][]C.int),
+			errorMessage:   errMsg(r),
+		}
+		return false
 
 	} else {
 		re.matchResult = &MatchResult{
 			matched:        true,
 			region:         region,
-			input:          s,
+			input:          input,
 			regex:          re.regex,
 			namedGroupNums: make(map[string][]C.int),
 		}
-		return true, nil
+		return true
 	}
 }
 
-func (re *Regexp) Search(s string) (bool, error) {
+func (re *Regexp) MatchString(s string) bool {
+	b := []byte(s)
+	return re.match(b)
+}
+
+func (re *Regexp) search(b []byte) bool {
 	region := C.onig_region_new()
-	beginning, end := getPointers(s)
+	beginning, end := bytePointers(b)
 	searchBeginning := beginning
 	searchEnd := end
 	defer free(beginning, end)
+	input := string(b)
 
 	r := C.onig_search(re.regex, beginning, end, searchBeginning, searchEnd, region, C.ONIG_OPTION_NONE)
 	if r == C.ONIG_MISMATCH {
 		C.onig_region_free(region, 1)
 		re.matchResult = &MatchResult{
 			matched:        false,
-			input:          s,
+			input:          input,
 			namedGroupNums: make(map[string][]C.int),
 		}
-		return false, nil
+		return false
 
 	} else if r < 0 {
 		C.onig_region_free(region, 1)
-		return false, errors.New(errMsg(r))
+		re.matchResult = &MatchResult{
+			matched:        false,
+			input:          input,
+			namedGroupNums: make(map[string][]C.int),
+			errorMessage:   errMsg(r),
+		}
+		return false
 
 	} else {
 		re.matchResult = &MatchResult{
 			matched:        true,
 			region:         region,
-			input:          s,
+			input:          input,
 			regex:          re.regex,
 			namedGroupNums: make(map[string][]C.int),
 		}
-		return true, nil
+		return true
 	}
+}
+
+func (re *Regexp) SearchString(s string) bool {
+	b := []byte(s)
+	return re.search(b)
 }
 
 func (m *MatchResult) getNamedGroupNums(s string) ([]C.int, error) {
@@ -187,7 +221,7 @@ func (m *MatchResult) getNamedGroupNums(s string) ([]C.int, error) {
 		return cached, nil
 	}
 
-	beginning, end := getPointers(s)
+	beginning, end := stringPointers(s)
 	defer free(beginning, end)
 
 	var groupNums *C.int
@@ -241,9 +275,15 @@ func quote(s string) string {
 	return strconv.Quote(s)
 }
 
-func getPointers(s string) (beginning, end *C.OnigUChar) {
+func stringPointers(s string) (beginning, end *C.OnigUChar) {
 	beginning = (*C.OnigUChar)(unsafe.Pointer(C.CString(s)))
 	end = (*C.OnigUChar)(unsafe.Pointer(uintptr(unsafe.Pointer(beginning)) + uintptr(len(s))))
+	return
+}
+
+func bytePointers(b []byte) (beginning, end *C.OnigUChar) {
+	beginning = (*C.OnigUChar)(C.CBytes(b))
+	end = (*C.OnigUChar)(unsafe.Pointer(uintptr(unsafe.Pointer(beginning)) + uintptr(len(b))))
 	return
 }
 
