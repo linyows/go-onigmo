@@ -18,10 +18,7 @@ func TestSearchWithValidNamedGroup(t *testing.T) {
 		t.Error(err)
 	}
 
-	matched, err := regex.Search(s)
-	if err != nil {
-		t.Error(err)
-	}
+	matched := regex.SearchString(s)
 	if !matched {
 		t.Error("Expected a match, but not a match")
 	}
@@ -57,12 +54,9 @@ func TestMatchWithValidNamedGroup(t *testing.T) {
 		[]string{"1st user 2nd user bar value 789", "", "789"},
 		[]string{"1st user somebody 2nd user else value 123", "somebody", "123"},
 	} {
-		matched, err := regex.Match(data[0])
-		if err != nil {
-			t.Error(err)
-		}
+		matched := regex.MatchString(data[0])
 		if !matched {
-			t.Error("expected a match")
+			t.Error("Expected a match")
 		}
 
 		user, err := regex.matchResult.Get("user")
@@ -91,12 +85,9 @@ func TestMatchWithInValidNamedGroup(t *testing.T) {
 		t.Error(err)
 	}
 
-	matched, err := regex.Match("1st user foo 2nd user bar value 789")
-	if err != nil {
-		t.Error(err)
-	}
+	matched := regex.MatchString("1st user foo 2nd user bar value 789")
 	if !matched {
-		t.Error("expected a match")
+		t.Error("Expected a match")
 	}
 
 	for _, data := range [][]string{
