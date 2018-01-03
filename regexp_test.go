@@ -51,7 +51,7 @@ func TestMatchWithValidNamedGroup(t *testing.T) {
 
 	for _, data := range [][]string{
 		[]string{"1st user foo 2nd user bar value 7", "foo", "7"},
-		[]string{"1st user 2nd user bar value 789", "", "789"},
+		[]string{"1st user 2nd user bar value 789", "bar", "789"},
 		[]string{"1st user somebody 2nd user else value 123", "somebody", "123"},
 	} {
 		matched := regex.MatchString(data[0])
