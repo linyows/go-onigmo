@@ -249,7 +249,10 @@ func (m *MatchResult) Get(s string) (string, error) {
 
 	for _, groupNum := range groupNums {
 		w := C.onigmo_helper_get(C.CString(m.input), m.region.beg, m.region.end, groupNum)
-		return C.GoString(w), nil
+		word := C.GoString(w)
+		if word != "" {
+			return word, nil
+		}
 	}
 
 	return "", nil
