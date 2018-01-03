@@ -99,7 +99,6 @@ func MustCompile(expr string) *Regexp {
 	if error != nil {
 		panic(`regexp: Compile(` + quote(expr) + `): ` + error.Error())
 	}
-
 	return regexp
 }
 
@@ -108,7 +107,6 @@ func Match(pattern string, b []byte) bool {
 	if err != nil {
 		return false
 	}
-
 	return re.match(b)
 }
 
@@ -117,7 +115,6 @@ func MatchString(pattern string, s string) bool {
 	if err != nil {
 		return false
 	}
-
 	return re.MatchString(s)
 }
 
