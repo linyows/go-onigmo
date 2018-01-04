@@ -13,6 +13,19 @@ It binds the regular expression library Onigmo to Go.
 [license]: https://github.com/linyows/go-onigmo/blob/master/LICENSE
 [godocs]: http://godoc.org/github.com/linyows/go-onigmo
 
+Benchmarks
+----------
+
+These are the benchmarks as they are defined in Go's regexp package.
+
+```sh
+$ go test -bench RE2 | sed 's/RE2/Regexp/' > before
+$ go test -bench Onigmo | sed 's/Onigmo/Regexp/' > after
+$ benchcmp before after
+benchmark             old ns/op     new ns/op     delta
+BenchmarkRegexp-4     25775         31043         +20.44%
+```
+
 Installation
 ------------
 
