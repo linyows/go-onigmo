@@ -1,6 +1,8 @@
 package onigmo
 
 import (
+	"fmt"
+	"regexp"
 	"testing"
 )
 
@@ -110,4 +112,36 @@ func TestMatchWithInValidNamedGroup(t *testing.T) {
 
 	defer regex.matchResult.Free()
 	defer regex.Free()
+}
+
+const STR = "1st user foo 2nd user bar value 7"
+
+func BenchmarkOnigmo(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		re := MustCompile("^1st user (?<user>[a-z]*) ?2nd user (?<user>[a-z]+) value (?<val>[0-9]+)$")
+		re.MatchString(STR)
+		user, _ := re.matchResult.Get("user")
+		if user != "foo" {
+			fmt.Sprintf("Expected val %v, but got %v", "foo", user)
+		}
+		val, _ := re.matchResult.Get("val")
+		if val != "7" {
+			fmt.Sprintf("Expected val %v, but got %v", "7", val)
+		}
+		defer re.matchResult.Free()
+		defer re.Free()
+	}
+}
+
+func BenchmarkRE2(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		re := regexp.MustCompile("^1st user ([a-z]*) ?2nd user ([a-z]+) value ([0-9]+)$")
+		group := re.FindStringSubmatch(STR)
+		if group[1] != "foo" {
+			fmt.Sprintf("Expected user %v, but got %v", "foo", group[1])
+		}
+		if group[3] != "7" {
+			fmt.Sprintf("Expected val %v, but got %v", "7", group[3])
+		}
+	}
 }
