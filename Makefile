@@ -24,9 +24,10 @@ test:
 	go test -v $(TEST) $(TESTARGS) -timeout=30s -parallel=4
 	go test -race $(TEST) $(TESTARGS) -coverprofile=coverage.txt -covermode=atomic
 
-ci:
-	CGO_LDFLAGS=/usr/local/lib/libonigmo.a go test -v
-	CGO_LDFLAGS=/usr/local/lib/libonigmo.a go install .
+install:
+	go install .
+
+ci: test
 
 dist:
 	ghr v$(VERSION) pkg
