@@ -45,148 +45,186 @@ type Regexp struct {
 	encoding    C.OnigEncoding
 	regex       C.OnigRegex
 	mu          sync.Mutex
+	expr        string
 	matchResult *MatchResult
 }
 
+type NamedGroupNums map[string][]C.int
+
 type MatchResult struct {
-	regex                  C.OnigRegex
-	matched                bool
-	input                  string
-	region                 *C.OnigRegion
-	cachedCaptureGroupNums map[string][]C.int
+	regex          C.OnigRegex
+	matched        bool
+	input          string
+	region         *C.OnigRegion
+	namedGroupNums NamedGroupNums
+	errorMessage   string
 }
 
 func OnigmoVersion() string {
 	return C.GoString(C.onig_version())
 }
 
-func NewRegexp(str string) (*Regexp, error) {
+func NewRegexp(expr string) (*Regexp, error) {
 	ret := C.onig_init()
 	if ret != 0 {
 		return nil, errors.New("failed to initialize encoding for the Onigumo regular expression library.")
 	}
-	result := &Regexp{
-		encoding: ONIG_ENCODING_UTF8,
-	}
-	result.mu.Lock()
-	defer result.mu.Unlock()
 
-	patternStart, patternEnd := stringPointers(str)
-	defer free(patternStart, patternEnd)
+	re := &Regexp{
+		encoding: ONIG_ENCODING_UTF8,
+		expr:     expr,
+	}
+
+	re.mu.Lock()
+	defer re.mu.Unlock()
+
+	beginning, end := stringPointers(expr)
+	defer free(beginning, end)
 
 	var errorInfo C.OnigErrorInfo
-	r := C.onig_new(&result.regex, patternStart, patternEnd, C.ONIG_OPTION_DEFAULT, result.encoding, C.ONIG_SYNTAX_DEFAULT, &errorInfo)
+	r := C.onig_new(&re.regex, beginning, end, C.ONIG_OPTION_DEFAULT, re.encoding, C.ONIG_SYNTAX_DEFAULT, &errorInfo)
 	if r != C.ONIG_NORMAL {
 		return nil, errors.New(errMsgWithInfo(r, &errorInfo))
 	}
 
-	return result, nil
+	return re, nil
 }
 
-func Compile(str string) (*Regexp, error) {
-	return NewRegexp(str)
+func Compile(expr string) (*Regexp, error) {
+	return NewRegexp(expr)
 }
 
-func MustCompile(str string) *Regexp {
-	regexp, error := Compile(str)
+func MustCompile(expr string) *Regexp {
+	regexp, error := Compile(expr)
 	if error != nil {
-		panic(`regexp: Compile(` + quote(str) + `): ` + error.Error())
+		panic(`regexp: Compile(` + quote(expr) + `): ` + error.Error())
 	}
-
 	return regexp
 }
 
-func Match(pattern string, s string) (bool, error) {
+func Match(pattern string, b []byte) bool {
 	re, err := Compile(pattern)
 	if err != nil {
-		return false, err
+		return false
 	}
+	return re.match(b)
+}
 
-	return re.Match(s)
+func MatchString(pattern string, s string) bool {
+	re, err := Compile(pattern)
+	if err != nil {
+		return false
+	}
+	return re.MatchString(s)
 }
 
 func (m *MatchResult) HasCaptureGroup(name string) bool {
-	_, err := m.getCaptureGroupNums(name)
+	_, err := m.getNamedGroupNums(name)
 
 	return err == nil
 }
 
-func (re *Regexp) Match(input string) (bool, error) {
+func (re *Regexp) match(b []byte) bool {
 	region := C.onig_region_new()
-	inputStart, inputEnd := stringPointers(input)
-	defer free(inputStart, inputEnd)
+	beginning, end := bytePointers(b)
+	defer free(beginning, end)
+	input := string(b)
 
-	r := C.onig_match(re.regex, inputStart, inputEnd, inputStart, region, C.ONIG_OPTION_NONE)
+	r := C.onig_match(re.regex, beginning, end, beginning, region, C.ONIG_OPTION_NONE)
 	if r == C.ONIG_MISMATCH {
 		C.onig_region_free(region, 1)
 		re.matchResult = &MatchResult{
-			matched:                false,
-			cachedCaptureGroupNums: make(map[string][]C.int),
+			matched:        false,
+			input:          input,
+			namedGroupNums: make(map[string][]C.int),
 		}
-		return false, nil
+		return false
 
 	} else if r < 0 {
 		C.onig_region_free(region, 1)
-		return false, errors.New(errMsg(r))
+		re.matchResult = &MatchResult{
+			matched:        false,
+			input:          input,
+			namedGroupNums: make(map[string][]C.int),
+			errorMessage:   errMsg(r),
+		}
+		return false
 
 	} else {
 		re.matchResult = &MatchResult{
-			matched: true,
-			region:  region,
-			input:   input,
-			regex:   re.regex,
-			cachedCaptureGroupNums: make(map[string][]C.int),
+			matched:        true,
+			region:         region,
+			input:          input,
+			regex:          re.regex,
+			namedGroupNums: make(map[string][]C.int),
 		}
-		return true, nil
+		return true
 	}
 }
 
-func (re *Regexp) Search(s string) string {
+func (re *Regexp) MatchString(s string) bool {
+	b := []byte(s)
+	return re.match(b)
+}
+
+func (re *Regexp) search(b []byte) bool {
 	region := C.onig_region_new()
-	start, end := stringPointers(s)
-	searchStart := start
+	beginning, end := bytePointers(b)
+	searchBeginning := beginning
 	searchEnd := end
-	defer free(start, end)
-	defer free(searchStart, searchEnd)
+	defer free(beginning, end)
+	input := string(b)
 
-	r := C.onig_search(re.regex, start, end, searchStart, searchEnd, region, C.ONIG_OPTION_NONE)
+	r := C.onig_search(re.regex, beginning, end, searchBeginning, searchEnd, region, C.ONIG_OPTION_NONE)
 	if r == C.ONIG_MISMATCH {
 		C.onig_region_free(region, 1)
 		re.matchResult = &MatchResult{
-			matched:                false,
-			cachedCaptureGroupNums: make(map[string][]C.int),
+			matched:        false,
+			input:          input,
+			namedGroupNums: make(map[string][]C.int),
 		}
-		return ""
+		return false
 
 	} else if r < 0 {
 		C.onig_region_free(region, 1)
-		return ""
+		re.matchResult = &MatchResult{
+			matched:        false,
+			input:          input,
+			namedGroupNums: make(map[string][]C.int),
+			errorMessage:   errMsg(r),
+		}
+		return false
 
 	} else {
 		re.matchResult = &MatchResult{
-			matched: true,
-			region:  region,
-			input:   s,
-			regex:   re.regex,
-			cachedCaptureGroupNums: make(map[string][]C.int),
+			matched:        true,
+			region:         region,
+			input:          input,
+			regex:          re.regex,
+			namedGroupNums: make(map[string][]C.int),
 		}
-		return ""
+		return true
 	}
 }
 
-func (m *MatchResult) getCaptureGroupNums(name string) ([]C.int, error) {
-	cached, ok := m.cachedCaptureGroupNums[name]
+func (re *Regexp) SearchString(s string) bool {
+	b := []byte(s)
+	return re.search(b)
+}
+
+func (m *MatchResult) getNamedGroupNums(s string) ([]C.int, error) {
+	cached, ok := m.namedGroupNums[s]
 	if ok {
 		return cached, nil
 	}
 
-	nameStart, nameEnd := stringPointers(name)
-	defer free(nameStart, nameEnd)
+	beginning, end := stringPointers(s)
+	defer free(beginning, end)
 
 	var groupNums *C.int
-	n := C.onig_name_to_group_numbers(m.regex, nameStart, nameEnd, &groupNums)
+	n := C.onig_name_to_group_numbers(m.regex, beginning, end, &groupNums)
 	if n <= 0 {
-		return nil, fmt.Errorf("%v: no such capture group in pattern", name)
+		return nil, fmt.Errorf("%v: no such capture group in pattern", s)
 	}
 
 	result := make([]C.int, 0, int(n))
@@ -194,24 +232,27 @@ func (m *MatchResult) getCaptureGroupNums(name string) ([]C.int, error) {
 		result = append(result, getPos(groupNums, C.int(i)))
 	}
 
-	m.cachedCaptureGroupNums[name] = result
+	m.namedGroupNums[s] = result
 
 	return result, nil
 }
 
-func (m *MatchResult) Get(name string) (string, error) {
+func (m *MatchResult) Get(s string) (string, error) {
 	if !m.matched {
 		return "", nil
 	}
 
-	groupNums, err := m.getCaptureGroupNums(name)
+	groupNums, err := m.getNamedGroupNums(s)
 	if err != nil {
 		return "", err
 	}
 
 	for _, groupNum := range groupNums {
 		w := C.onigmo_helper_get(C.CString(m.input), m.region.beg, m.region.end, groupNum)
-		return C.GoString(w), nil
+		word := C.GoString(w)
+		if word != "" {
+			return word, nil
+		}
 	}
 
 	return "", nil
@@ -234,9 +275,15 @@ func quote(s string) string {
 	return strconv.Quote(s)
 }
 
-func stringPointers(s string) (start, end *C.OnigUChar) {
-	start = (*C.OnigUChar)(unsafe.Pointer(C.CString(s)))
-	end = (*C.OnigUChar)(unsafe.Pointer(uintptr(unsafe.Pointer(start)) + uintptr(len(s))))
+func stringPointers(s string) (beginning, end *C.OnigUChar) {
+	beginning = (*C.OnigUChar)(unsafe.Pointer(C.CString(s)))
+	end = (*C.OnigUChar)(unsafe.Pointer(uintptr(unsafe.Pointer(beginning)) + uintptr(len(s))))
+	return
+}
+
+func bytePointers(b []byte) (beginning, end *C.OnigUChar) {
+	beginning = (*C.OnigUChar)(C.CBytes(b))
+	end = (*C.OnigUChar)(unsafe.Pointer(uintptr(unsafe.Pointer(beginning)) + uintptr(len(b))))
 	return
 }
 
@@ -244,9 +291,9 @@ func getPos(p *C.int, i C.int) C.int {
 	return *(*C.int)(unsafe.Pointer(uintptr(unsafe.Pointer(p)) + uintptr(i)*unsafe.Sizeof(C.int(0))))
 }
 
-func free(start *C.OnigUChar, end *C.OnigUChar) {
-	C.memset(unsafe.Pointer(start), C.int(0), C.size_t(uintptr(unsafe.Pointer(end))-uintptr(unsafe.Pointer(start))))
-	C.free(unsafe.Pointer(start))
+func free(beginning *C.OnigUChar, end *C.OnigUChar) {
+	C.memset(unsafe.Pointer(beginning), C.int(0), C.size_t(uintptr(unsafe.Pointer(end))-uintptr(unsafe.Pointer(beginning))))
+	C.free(unsafe.Pointer(beginning))
 }
 
 func errMsgWithInfo(returnCode C.int, errorInfo *C.OnigErrorInfo) string {

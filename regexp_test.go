@@ -1,6 +1,8 @@
 package onigmo
 
 import (
+	"fmt"
+	"regexp"
 	"testing"
 )
 
@@ -11,7 +13,39 @@ func TestOnigmoVersion(t *testing.T) {
 	}
 }
 
-func TestValidCaptureGroups(t *testing.T) {
+func TestSearchWithValidNamedGroup(t *testing.T) {
+	s := "aaabbbbcc"
+	regex, err := Compile("(?<foo>a*)(?<bar>b*)(?<foo>c*)")
+	if err != nil {
+		t.Error(err)
+	}
+
+	matched := regex.SearchString(s)
+	if !matched {
+		t.Error("Expected a match, but not a match")
+	}
+
+	foo, err := regex.matchResult.Get("foo")
+	if err != nil {
+		t.Error(err)
+	}
+	if foo != "aaa" {
+		t.Errorf("Expected foo %v, but got %v", "aaa", foo)
+	}
+
+	bar, err := regex.matchResult.Get("bar")
+	if err != nil {
+		t.Error(err)
+	}
+	if bar != "bbbb" {
+		t.Errorf("Expected bar %v, but got %v", "bbbb", bar)
+	}
+
+	defer regex.matchResult.Free()
+	defer regex.Free()
+}
+
+func TestMatchWithValidNamedGroup(t *testing.T) {
 	regex, err := Compile("^1st user (?<user>[a-z]*) ?2nd user (?<user>[a-z]+) value (?<val>[0-9]+)$")
 	if err != nil {
 		t.Error(err)
@@ -19,15 +53,12 @@ func TestValidCaptureGroups(t *testing.T) {
 
 	for _, data := range [][]string{
 		[]string{"1st user foo 2nd user bar value 7", "foo", "7"},
-		// []string{"1st user 2nd user bar value 789", "bar", "789"},
+		[]string{"1st user 2nd user bar value 789", "bar", "789"},
 		[]string{"1st user somebody 2nd user else value 123", "somebody", "123"},
 	} {
-		matched, err := regex.Match(data[0])
-		if err != nil {
-			t.Error(err)
-		}
+		matched := regex.MatchString(data[0])
 		if !matched {
-			t.Error("expected a match")
+			t.Error("Expected a match")
 		}
 
 		user, err := regex.matchResult.Get("user")
@@ -50,18 +81,15 @@ func TestValidCaptureGroups(t *testing.T) {
 	defer regex.Free()
 }
 
-func TestInvalidCaptureGroups(t *testing.T) {
+func TestMatchWithInValidNamedGroup(t *testing.T) {
 	regex, err := Compile("^1st user (?<user>[a-z]*) ?2nd user (?<user>[a-z]+) (?<x>.*)(.*)value (?<val>[0-9]*)$")
 	if err != nil {
 		t.Error(err)
 	}
 
-	matched, err := regex.Match("1st user foo 2nd user bar value 789")
-	if err != nil {
-		t.Error(err)
-	}
+	matched := regex.MatchString("1st user foo 2nd user bar value 789")
 	if !matched {
-		t.Error("expected a match")
+		t.Error("Expected a match")
 	}
 
 	for _, data := range [][]string{
@@ -84,4 +112,36 @@ func TestInvalidCaptureGroups(t *testing.T) {
 
 	defer regex.matchResult.Free()
 	defer regex.Free()
+}
+
+const STR = "1st user foo 2nd user bar value 7"
+
+func BenchmarkOnigmo(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		re := MustCompile("^1st user (?<user>[a-z]*) ?2nd user (?<user>[a-z]+) value (?<val>[0-9]+)$")
+		re.MatchString(STR)
+		user, _ := re.matchResult.Get("user")
+		if user != "foo" {
+			fmt.Sprintf("Expected val %v, but got %v", "foo", user)
+		}
+		val, _ := re.matchResult.Get("val")
+		if val != "7" {
+			fmt.Sprintf("Expected val %v, but got %v", "7", val)
+		}
+		defer re.matchResult.Free()
+		defer re.Free()
+	}
+}
+
+func BenchmarkRE2(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		re := regexp.MustCompile("^1st user ([a-z]*) ?2nd user ([a-z]+) value ([0-9]+)$")
+		group := re.FindStringSubmatch(STR)
+		if group[1] != "foo" {
+			fmt.Sprintf("Expected user %v, but got %v", "foo", group[1])
+		}
+		if group[3] != "7" {
+			fmt.Sprintf("Expected val %v, but got %v", "7", group[3])
+		}
+	}
 }

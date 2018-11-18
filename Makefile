@@ -7,9 +7,11 @@ ONIG_VERSION?=6.1.3
 default: test
 
 onigmo:
-	curl -sLO https://github.com/k-takata/Onigmo/releases/download/Onigmo-${ONIG_VERSION}/onigmo-${ONIG_VERSION}.tar.gz
-	tar xfz onigmo-${ONIG_VERSION}.tar.gz
-	cd onigmo-${ONIG_VERSION} && ./configure && make && sudo make install
+	test -d tmp || mkdir tmp
+	cd ./tmp && \
+		curl -sLO https://github.com/k-takata/Onigmo/releases/download/Onigmo-${ONIG_VERSION}/onigmo-${ONIG_VERSION}.tar.gz && \
+		tar xfz onigmo-${ONIG_VERSION}.tar.gz && \
+		cd onigmo-${ONIG_VERSION} && ./configure && make && sudo make install
 
 deps:
 	go get -d -t ./...

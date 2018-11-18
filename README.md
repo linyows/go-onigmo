@@ -15,8 +15,26 @@ It binds the regular expression library Onigmo to Go.
 [godocs]: http://godoc.org/github.com/linyows/go-onigmo
 [codecov]: https://codecov.io/gh/linyows/go-onigmo
 
-Install
--------
+Benchmarks
+----------
+
+These are the benchmarks as they are defined in Go's regexp package.
+
+```sh
+$ go test -bench RE2 | sed 's/RE2/Regexp/' > before
+$ go test -bench Onigmo | sed 's/Onigmo/Regexp/' > after
+$ benchcmp before after
+benchmark             old ns/op     new ns/op     delta
+BenchmarkRegexp-4     25775         31043         +20.44%
+```
+
+Installation
+------------
+
+```sh
+$ git clone git@github.com:linyows/go-onigmo.git && cd go-onigmo
+$ make onigmo
+```
 
 To install, use `go get`:
 
