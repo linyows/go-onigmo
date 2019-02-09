@@ -9,6 +9,7 @@ go:
   - master
 env:
   - ONIG_VERSION=6.1.3 GO111MODULE=on CGO_LDFLAGS=/usr/local/lib/libonigmo.a
+  - GO111MODULE=on
 addons:
   apt:
     packages:
