@@ -6,10 +6,10 @@ import (
 	"testing"
 )
 
-func TestOnigmoVersion(t *testing.T) {
-	v := OnigmoVersion()
+func TestVersion(t *testing.T) {
+	v := Version()
 	if v != "6.1.3" {
-		t.Errorf("OnigmoVersion wrong: %s", v)
+		t.Errorf("Version wrong: %s", v)
 	}
 }
 
