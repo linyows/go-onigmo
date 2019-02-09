@@ -5,7 +5,7 @@ It binds the regular expression library Onigmo to Go.
 
 [![Travis](https://img.shields.io/travis/linyows/go-onigmo.svg?style=for-the-badge)][travis]
 [![Codecov](https://img.shields.io/codecov/c/github/linyows/go-onigmo.svg?style=for-the-badge)][codecov]
-[![Go Documentation](http://img.shields.io/badge/go-documentation-blue.svg?style=for-the-badge)][godocs]
+[![GoDoc](http://img.shields.io/badge/go-documentation-blue.svg?style=for-the-badge)][godocs]
 [![MIT License](http://img.shields.io/badge/license-MIT-blue.svg?style=for-the-badge)][license]
 
 [travis]: https://travis-ci.org/linyows/go-onigmo
