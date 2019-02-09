@@ -1,10 +1,31 @@
 TEST?=./...
-NAME = "$(shell awk -F\" '/^const Name/ { print $$2; exit }' version.go)"
-VERSION = "$(shell awk -F\" '/^const Version/ { print $$2; exit }' version.go)"
+ifeq ("$(shell uname)","Darwin")
+NCPU ?= $(shell sysctl hw.ncpu | cut -f2 -d' ')
+else
+NCPU ?= $(shell cat /proc/cpuinfo | grep processor | wc -l)
+endif
+TEST_ARGS=-v
+TEST_OPTIONS=-timeout 30s -parallel $(NCPU)
 
 ONIG_VERSION?=6.1.3
 
-default: test
+default: build
+
+deps:
+	go get -u golang.org/x/lint/golint
+
+test:
+	go test $(TEST) $(TEST_ARGS) $(TEST_OPTIONS)
+	go test -race $(TEST) -coverprofile=coverage.txt -covermode=atomic
+
+lint:
+	golint -set_exit_status $(TEST)
+
+ci: deps test lint
+	git diff go.mod
+
+install:
+	go install .
 
 onigmo:
 	test -d tmp || mkdir tmp
@@ -13,23 +34,4 @@ onigmo:
 		tar xfz onigmo-${ONIG_VERSION}.tar.gz && \
 		cd onigmo-${ONIG_VERSION} && ./configure && make && sudo make install
 
-deps:
-	go get -d -t ./...
-
-depsdev:
-	go get -u github.com/mitchellh/gox
-	go get -u github.com/tcnksm/ghr
-
-test:
-	go test -v $(TEST) $(TESTARGS) -timeout=30s -parallel=4
-	go test -race $(TEST) $(TESTARGS) -coverprofile=coverage.txt -covermode=atomic
-
-install:
-	go install .
-
-ci: test
-
-dist:
-	ghr v$(VERSION) pkg
-
-.PHONY: default dist test test deps
+.PHONY: default lint test deps
