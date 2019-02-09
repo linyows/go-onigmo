@@ -26,6 +26,22 @@ benchmark             old ns/op     new ns/op     delta
 BenchmarkRegexp-4     25775         31043         +20.44%
 ```
 
+Usage
+-----
+
+```go
+func main() {
+  s := "Hello World"
+  re := MustCompile("^Hello (?<word>[A-z]*)$")
+  re.MatchString(s)
+  word, _ := re.matchResult.Get("word")
+  fmt.Sprintf("Naruhodo! The %s", word)
+
+  defer re.matchResult.Free()
+  defer re.Free()
+}
+```
+
 Installation
 ------------
 
