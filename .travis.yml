@@ -21,9 +21,7 @@ install:
   - make onigmo
 script:
   - make test
-  - make order
-    on:
-      go: 1.11.x
+  - if [[ $TRAVIS_GO_VERSION == 1.11* ]]; then make order; fi
 after_success:
   - bash <(curl -s https://codecov.io/bash)
 notifications:
