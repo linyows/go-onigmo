@@ -22,7 +22,6 @@ lint:
 	golint -set_exit_status $(TEST)
 
 ci: deps test lint
-	git diff go.mod
 
 install:
 	go install .
