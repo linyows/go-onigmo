@@ -20,7 +20,10 @@ addons:
 install:
   - make onigmo
 script:
-  - make ci
+  - make test
+  - make order
+    on:
+      go: 1.11.x
 after_success:
   - bash <(curl -s https://codecov.io/bash)
 notifications:

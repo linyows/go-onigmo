@@ -21,7 +21,9 @@ test:
 lint:
 	golint -set_exit_status $(TEST)
 
-ci: deps test lint
+order: deps lint
+	go mod tidy
+	git diff go.mod
 
 install:
 	go install .
