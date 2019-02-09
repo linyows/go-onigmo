@@ -1,5 +1,5 @@
-Onigmo bindings for Go
-======================
+ :japanese_ogre: Onigmo bindings for Go
+=======================================
 
 It binds the regular expression library Onigmo to Go.
 
