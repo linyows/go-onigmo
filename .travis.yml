@@ -7,6 +7,9 @@ go:
   - 1.8.x
   - 1.7.x
   - master
+matrix:
+  allow_failures:
+  - go: master
 env:
   - ONIG_VERSION=6.1.3 GO111MODULE=on CGO_LDFLAGS=/usr/local/lib/libonigmo.a
 addons:
@@ -20,7 +23,8 @@ addons:
 install:
   - make onigmo
 script:
-  - make ci
+  - make test
+  - if [[ $TRAVIS_GO_VERSION == 1.11* ]]; then make order; fi
 after_success:
   - bash <(curl -s https://codecov.io/bash)
 notifications:

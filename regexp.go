@@ -34,13 +34,19 @@ import (
 )
 
 var (
-	ONIG_ENCODING_UTF8         = &C.OnigEncodingUTF_8
-	ONIG_ENCODING_ASCII        = &C.OnigEncodingASCII
-	ONIG_SYNTAX_PERL           = &C.OnigSyntaxPerl
-	ONIG_SYNTAX_POSIX_BASIC    = &C.OnigSyntaxPosixBasic
-	ONIG_SYNTAX_POSIX_EXTENDED = &C.OnigSyntaxPosixExtended
+	// OnigEncodingUTF8 for onigmo encoding
+	OnigEncodingUTF8 = &C.OnigEncodingUTF_8
+	// OnigEncodingASCII for onigmo encoding
+	OnigEncodingASCII = &C.OnigEncodingASCII
+	// OnigSyntaxPerl for onigmo syntax
+	OnigSyntaxPerl = &C.OnigSyntaxPerl
+	// OnigSyntaxPOSIXBasic for onigmo syntax
+	OnigSyntaxPOSIXBasic = &C.OnigSyntaxPosixBasic
+	// OnigSyntaxPOSIXExtended for onigmo syntax
+	OnigSyntaxPOSIXExtended = &C.OnigSyntaxPosixExtended
 )
 
+// Regexp struct for onigmo
 type Regexp struct {
 	encoding    C.OnigEncoding
 	regex       C.OnigRegex
@@ -49,8 +55,10 @@ type Regexp struct {
 	matchResult *MatchResult
 }
 
+// NamedGroupNums for named group regexp
 type NamedGroupNums map[string][]C.int
 
+// MatchResult struct for regexp result
 type MatchResult struct {
 	regex          C.OnigRegex
 	matched        bool
@@ -60,18 +68,20 @@ type MatchResult struct {
 	errorMessage   string
 }
 
-func OnigmoVersion() string {
+// Version returns version
+func Version() string {
 	return C.GoString(C.onig_version())
 }
 
+// NewRegexp returns Regexp
 func NewRegexp(expr string) (*Regexp, error) {
 	ret := C.onig_init()
 	if ret != 0 {
-		return nil, errors.New("failed to initialize encoding for the Onigumo regular expression library.")
+		return nil, errors.New("failed to initialize encoding for the Onigumo regular expression library")
 	}
 
 	re := &Regexp{
-		encoding: ONIG_ENCODING_UTF8,
+		encoding: OnigEncodingUTF8,
 		expr:     expr,
 	}
 
@@ -90,10 +100,12 @@ func NewRegexp(expr string) (*Regexp, error) {
 	return re, nil
 }
 
+// Compile returns Regexp
 func Compile(expr string) (*Regexp, error) {
 	return NewRegexp(expr)
 }
 
+// MustCompile returns Regexp
 func MustCompile(expr string) *Regexp {
 	regexp, error := Compile(expr)
 	if error != nil {
@@ -102,6 +114,7 @@ func MustCompile(expr string) *Regexp {
 	return regexp
 }
 
+// Match checks by pattern
 func Match(pattern string, b []byte) bool {
 	re, err := Compile(pattern)
 	if err != nil {
@@ -110,6 +123,7 @@ func Match(pattern string, b []byte) bool {
 	return re.match(b)
 }
 
+// MatchString checks by pattern
 func MatchString(pattern string, s string) bool {
 	re, err := Compile(pattern)
 	if err != nil {
@@ -118,6 +132,7 @@ func MatchString(pattern string, s string) bool {
 	return re.MatchString(s)
 }
 
+// HasCaptureGroup checks have
 func (m *MatchResult) HasCaptureGroup(name string) bool {
 	_, err := m.getNamedGroupNums(name)
 
@@ -162,6 +177,7 @@ func (re *Regexp) match(b []byte) bool {
 	}
 }
 
+// MatchString checks words
 func (re *Regexp) MatchString(s string) bool {
 	b := []byte(s)
 	return re.match(b)
@@ -207,6 +223,7 @@ func (re *Regexp) search(b []byte) bool {
 	}
 }
 
+// SearchString checks words
 func (re *Regexp) SearchString(s string) bool {
 	b := []byte(s)
 	return re.search(b)
@@ -237,6 +254,7 @@ func (m *MatchResult) getNamedGroupNums(s string) ([]C.int, error) {
 	return result, nil
 }
 
+// Get returns matched words
 func (m *MatchResult) Get(s string) (string, error) {
 	if !m.matched {
 		return "", nil
@@ -258,10 +276,12 @@ func (m *MatchResult) Get(s string) (string, error) {
 	return "", nil
 }
 
+// Free for Regexp
 func (re *Regexp) Free() {
 	C.onig_free(re.regex)
 }
 
+// Free for MatchResult
 func (m *MatchResult) Free() {
 	if m.matched {
 		C.onig_region_free(m.region, 1)
@@ -301,9 +321,8 @@ func errMsgWithInfo(returnCode C.int, errorInfo *C.OnigErrorInfo) string {
 	l := C.onigmo_helper_error_code_with_info_to_str((*C.UChar)(&msg[0]), returnCode, errorInfo)
 	if l <= 0 {
 		return "unknown error"
-	} else {
-		return string(msg[:l])
 	}
+	return string(msg[:l])
 }
 
 func errMsg(returnCode C.OnigPosition) string {
@@ -311,7 +330,6 @@ func errMsg(returnCode C.OnigPosition) string {
 	l := C.onigmo_helper_error_code_to_str((*C.UChar)(&msg[0]), returnCode)
 	if l <= 0 {
 		return "unknown error"
-	} else {
-		return string(msg[:l])
 	}
+	return string(msg[:l])
 }

@@ -1,19 +1,17 @@
-Onigmo bindings for Go
-======================
+ :japanese_ogre: Onigmo bindings for Go
+=======================================
 
 It binds the regular expression library Onigmo to Go.
 
 [![Travis](https://img.shields.io/travis/linyows/go-onigmo.svg?style=for-the-badge)][travis]
-[![GitHub release](http://img.shields.io/github/release/linyows/go-onigmo.svg?style=for-the-badge)][release]
-[![MIT License](http://img.shields.io/badge/license-MIT-blue.svg?style=for-the-badge)][license]
-[![Go Documentation](http://img.shields.io/badge/go-documentation-blue.svg?style=for-the-badge)][godocs]
 [![Codecov](https://img.shields.io/codecov/c/github/linyows/go-onigmo.svg?style=for-the-badge)][codecov]
+[![GoDoc](http://img.shields.io/badge/go-documentation-blue.svg?style=for-the-badge)][godocs]
+[![MIT License](http://img.shields.io/badge/license-MIT-blue.svg?style=for-the-badge)][license]
 
 [travis]: https://travis-ci.org/linyows/go-onigmo
-[release]: https://github.com/linyows/go-onigmo/releases
-[license]: https://github.com/linyows/go-onigmo/blob/master/LICENSE
-[godocs]: http://godoc.org/github.com/linyows/go-onigmo
 [codecov]: https://codecov.io/gh/linyows/go-onigmo
+[godocs]: http://godoc.org/github.com/linyows/go-onigmo
+[license]: https://github.com/linyows/go-onigmo/blob/master/LICENSE
 
 Benchmarks
 ----------
@@ -26,6 +24,22 @@ $ go test -bench Onigmo | sed 's/Onigmo/Regexp/' > after
 $ benchcmp before after
 benchmark             old ns/op     new ns/op     delta
 BenchmarkRegexp-4     25775         31043         +20.44%
+```
+
+Usage
+-----
+
+```go
+func main() {
+  s := "Hello World"
+  re := MustCompile("^Hello (?<word>[A-z]*)$")
+  re.MatchString(s)
+  word, _ := re.matchResult.Get("word")
+  fmt.Sprintf("Naruhodo! The %s", word)
+
+  defer re.matchResult.Free()
+  defer re.Free()
+}
 ```
 
 Installation
