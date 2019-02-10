@@ -5,11 +5,13 @@ It binds the regular expression library Onigmo to Go.
 
 [![Travis](https://img.shields.io/travis/linyows/go-onigmo.svg?style=for-the-badge)][travis]
 [![Codecov](https://img.shields.io/codecov/c/github/linyows/go-onigmo.svg?style=for-the-badge)][codecov]
+[![GitHub release](http://img.shields.io/github/release/linyows/go-onigmo.svg?style=for-the-badge)][release]
 [![GoDoc](http://img.shields.io/badge/go-documentation-blue.svg?style=for-the-badge)][godocs]
 [![MIT License](http://img.shields.io/badge/license-MIT-blue.svg?style=for-the-badge)][license]
 
 [travis]: https://travis-ci.org/linyows/go-onigmo
 [codecov]: https://codecov.io/gh/linyows/go-onigmo
+[release]: https://github.com/linyows/go-onigmo/releases
 [godocs]: http://godoc.org/github.com/linyows/go-onigmo
 [license]: https://github.com/linyows/go-onigmo/blob/master/LICENSE
 
