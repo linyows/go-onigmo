@@ -8,7 +8,7 @@ import (
 
 func TestVersion(t *testing.T) {
 	v := Version()
-	if v != "6.1.3" {
+	if v != "6.2.0" {
 		t.Errorf("Version wrong: %s", v)
 	}
 }
