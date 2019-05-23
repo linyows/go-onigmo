@@ -7,7 +7,7 @@ endif
 TEST_ARGS=-v
 TEST_OPTIONS=-timeout 30s -parallel $(NCPU)
 
-ONIG_VERSION?=6.1.3
+ONIG_VERSION?=6.2.0
 
 default: build
 
